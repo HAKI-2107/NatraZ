@@ -1,0 +1,1123 @@
+# IrisMap — BAH 2026: End-to-End Production Integration
+
+You are working on an **existing Replit project called IrisMap**, originally developed for **BAH 2026**.
+
+Your task is to upgrade the existing application into a fully integrated, testable, deployment-ready system covering:
+
+1. AI-powered remote-sensing scene analysis
+2. Multiple map providers
+3. MCP-based infrastructure diagnostics
+4. AgentPhone telephony/SMS alerting
+5. Secure environment-variable handling
+6. Production/deployment readiness
+7. Frontend UX integration
+8. End-to-end testing and graceful fallback behavior
+
+## CRITICAL RULES BEFORE MODIFYING ANYTHING
+
+### 1. Preserve the existing application
+
+- First inspect the entire existing repository structure.
+- Understand the current frontend framework, backend framework, routing architecture, map implementation, state management, API conventions, and existing services.
+- **Do NOT rewrite or replace the application architecture unnecessarily.**
+- Reuse existing components, utilities, API clients, map instances, styling, state management, and routing wherever possible.
+- Do not remove currently working BAH functionality.
+- Do not create duplicate implementations of features that already exist.
+- Before modifying a file, understand how it is currently used.
+- Keep the existing UI/UX and visual language unless a change is required for the new functionality.
+- If a requested integration conflicts with existing functionality, adapt the integration rather than breaking the existing feature.
+
+### 2. Work incrementally
+
+Implement the project in logical phases:
+
+**Phase 1 — Repository audit**
+→ **Phase 2 — AI scene analysis**
+→ **Phase 3 — Google Maps integration**
+→ **Phase 4 — MCP integrations**
+→ **Phase 5 — AgentPhone**
+→ **Phase 6 — Security/secrets**
+→ **Phase 7 — Frontend integration**
+→ **Phase 8 — Testing**
+→ **Phase 9 — Deployment readiness**
+
+After each phase:
+- Check for TypeScript/build errors.
+- Check API routes.
+- Check imports.
+- Check frontend/backend integration.
+- Preserve previously working functionality.
+
+Do not mark a feature as complete merely because the code was written. Verify that it is actually wired into the application.
+
+---
+
+# PHASE 1 — EXISTING PROJECT AUDIT
+
+Before implementing features, inspect:
+
+- `package.json`
+- frontend source
+- backend/server source
+- routing
+- map components
+- existing API routes
+- existing environment-variable usage
+- existing authentication/security
+- existing detection/anomaly pipeline
+- existing notification/alert logic
+- deployment configuration
+- `.gitignore`
+- README/documentation
+
+Identify:
+
+- frontend entry point
+- backend entry point
+- map implementation
+- active map provider
+- current map layer architecture
+- current "Analyze Scene" button/component
+- current Detection Results panel
+- current Settings/Tools panel
+- current anomaly data model
+- existing API conventions
+
+Then implement the new functionality **using the existing architecture**.
+
+---
+
+# PHASE 2 — OPENAI VLM SCENE ANALYSIS
+
+## Goal
+
+When the user clicks **"Analyze Scene"**, IrisMap must analyze the currently visible remote-sensing/map scene.
+
+### Frontend behavior
+
+When "Analyze Scene" is clicked:
+
+1. Capture the currently active map viewport/canvas.
+2. Convert the visible map/canvas to a base64 image.
+3. Capture:
+   - latitude
+   - longitude
+   - zoom level
+   - selected imagery band
+   - selected composite mode
+   - active map provider/layer
+   - viewport dimensions if available
+4. Send this information to:
+
+`POST /api/analyze-scene`
+
+Do not send unnecessary image data or application secrets to the browser.
+
+### Backend endpoint
+
+Implement:
+
+`POST /api/analyze-scene`
+
+Use the OpenAI Node SDK.
+
+Read the API key ONLY from:
+
+`process.env.OPENAI_API_KEY`
+
+Never hardcode the API key.
+
+Preferred model:
+
+`gpt-4o`
+
+If the existing project requires a cheaper/faster model, allow:
+
+`gpt-4o-mini`
+
+Make the model configurable through an environment variable if appropriate.
+
+### Request structure
+
+Use a structured request similar to:
+
+```json
+{
+  "image": "data:image/png;base64,...",
+  "center": {
+    "lat": 17.XXXX,
+    "lng": 78.XXXX
+  },
+  "zoom": 12,
+  "band": "thermal",
+  "composite": "false-color",
+  "mapProvider": "esri"
+}
+```
+
+Adapt the exact structure to the existing application architecture.
+
+### Remote-sensing system prompt
+
+Create a specialized remote-sensing analysis prompt.
+
+The model must understand that:
+
+- the image may be satellite/remote-sensing imagery
+- the selected band/composite affects interpretation
+- visual conclusions are estimates, not ground-truth measurements
+- the model must not invent objects that cannot reasonably be inferred from the image
+
+Ask the model to analyze:
+
+- terrain classification
+- estimated urban density
+- visible roads/infrastructure
+- water bodies
+- vegetation indicators
+- thermal anomalies when thermal imagery is selected
+- unusual or potentially significant regions
+- confidence level
+- detected tags
+
+### Structured response
+
+Force the model to return machine-readable JSON.
+
+Use a schema similar to:
+
+```json
+{
+  "summary": "string",
+  "terrainClassification": {
+    "type": "string",
+    "confidence": 0
+  },
+  "urbanDensity": {
+    "classification": "low | medium | high",
+    "confidence": 0
+  },
+  "infrastructure": [
+    {
+      "type": "road | building | bridge | industrial | other",
+      "description": "string",
+      "confidence": 0
+    }
+  ],
+  "waterBodies": [
+    {
+      "type": "river | lake | reservoir | pond | other",
+      "description": "string",
+      "confidence": 0
+    }
+  ],
+  "vegetation": {
+    "classification": "string",
+    "confidence": 0
+  },
+  "thermalAnomalies": [
+    {
+      "description": "string",
+      "severity": "low | medium | high",
+      "confidence": 0
+    }
+  ],
+  "detectedTags": [],
+  "limitations": []
+}
+```
+
+Adapt the schema if necessary, but maintain predictable JSON.
+
+Validate the response before returning it to the frontend.
+
+If the model returns invalid JSON:
+
+1. Attempt safe parsing/recovery.
+2. If recovery fails, return a controlled API error.
+3. Never crash the server.
+
+### Frontend presentation
+
+Display results in the existing **AI Scene Analysis** panel or create a clean overlay/modal integrated into the existing UI.
+
+Show:
+
+- AI summary
+- terrain classification
+- urban density
+- infrastructure
+- water bodies
+- vegetation
+- thermal anomalies
+- confidence scores
+- detected tags
+- analysis metadata:
+  - coordinates
+  - zoom
+  - selected band
+  - composite
+  - map provider
+
+Add:
+
+- loading state
+- progress/analysis state
+- success state
+- error state
+- retry button
+
+Never leave the user with a blank screen if analysis fails.
+
+---
+
+# PHASE 3 — GOOGLE MAPS INTEGRATION
+
+Add Google Maps as an additional map provider without removing:
+
+- Esri
+- OpenStreetMap
+
+Use:
+
+`process.env.GOOGLE_MAPS_API_KEY`
+
+Never expose the secret directly in source code.
+
+## Map controls
+
+Add a provider/layer control allowing the user to choose:
+
+### Google Maps
+
+- Roadmap
+- Satellite
+- Hybrid
+
+### Existing providers
+
+- Esri
+- OpenStreetMap
+
+Use the application's existing map architecture.
+
+Do not create a second map instance unless technically necessary.
+
+## Provider state
+
+The UI should clearly indicate the currently active:
+
+- provider
+- layer
+- band/composite where applicable
+
+The active provider must also be included in scene-analysis metadata.
+
+## API key failure
+
+If the Google Maps key is missing or invalid:
+
+- do not crash the map
+- mark Google Maps as unavailable
+- keep Esri/OSM functional
+- show a clear non-blocking error/status message
+
+---
+
+# PHASE 4 — MODEL CONTEXT PROTOCOL (MCP)
+
+Create:
+
+`server/mcp/`
+
+Use:
+
+`@modelcontextprotocol/sdk`
+
+Keep MCP logic modular.
+
+Recommended structure:
+
+```text
+server/
+  mcp/
+    index.ts
+    railway.ts
+    cloudflare.ts
+    types.ts
+    health.ts
+```
+
+Adapt to the existing project structure if necessary.
+
+## MCP architecture requirements
+
+Do NOT tightly couple the frontend directly to Railway or Cloudflare credentials.
+
+The architecture should be:
+
+```text
+Frontend
+   ↓
+IrisMap Backend
+   ↓
+MCP Integration Layer
+   ↓
+Railway / Cloudflare
+```
+
+Secrets remain server-side.
+
+---
+
+# RAILWAY MCP
+
+Use:
+
+`process.env.RAILWAY_API_TOKEN`
+
+Implement functionality to retrieve, where supported by the available Railway integration/API:
+
+- service health
+- deployment status
+- deployment logs
+- active environment status
+
+Do not assume an API response shape.
+
+Normalize Railway responses into an IrisMap internal structure.
+
+Example:
+
+```json
+{
+  "connected": true,
+  "provider": "railway",
+  "services": [],
+  "deployments": [],
+  "environment": {}
+}
+```
+
+If credentials are missing:
+
+```json
+{
+  "connected": false,
+  "provider": "railway",
+  "reason": "missing_credentials"
+}
+```
+
+---
+
+# CLOUDFLARE MCP
+
+Use:
+
+`process.env.CLOUDFLARE_API_TOKEN`
+
+and:
+
+`process.env.CLOUDFLARE_ACCOUNT_ID`
+
+Where supported, retrieve/monitor:
+
+- DNS routing
+- cache status
+- Worker health/status
+- relevant deployment/runtime information
+
+Normalize responses into an internal structure.
+
+Never expose Cloudflare credentials to the frontend.
+
+---
+
+# MCP DIAGNOSTIC ENDPOINT
+
+Create:
+
+`GET /api/mcp/status`
+
+Return a safe diagnostic response such as:
+
+```json
+{
+  "railway": {
+    "connected": true,
+    "status": "healthy"
+  },
+  "cloudflare": {
+    "connected": true,
+    "status": "healthy"
+  },
+  "timestamp": "..."
+}
+```
+
+IMPORTANT:
+
+Do NOT return:
+
+- API tokens
+- secrets
+- authorization headers
+- private credentials
+
+If an integration fails, return the failure reason without exposing sensitive information.
+
+---
+
+# MCP FRONTEND UI
+
+Inside the existing **Settings / Tools / Diagnostics** area, add integration status badges:
+
+- Railway — Connected / Disconnected
+- Cloudflare — Connected / Disconnected
+- OpenAI — Configured / Missing
+- Google Maps — Configured / Missing
+- AgentPhone — Connected / Disconnected
+
+Use clear visual states.
+
+Add:
+
+**Refresh Diagnostics**
+
+button.
+
+The frontend should call:
+
+`GET /api/mcp/status`
+
+and update the status dynamically.
+
+---
+
+# PHASE 5 — AGENTPHONE TELEPHONY
+
+Create:
+
+`server/services/agentPhone.ts`
+
+Use:
+
+`process.env.AGENTPHONE_API_KEY`
+
+Never hardcode the key.
+
+Keep the AgentPhone implementation isolated from the anomaly detection logic.
+
+Create a reusable service interface such as:
+
+```ts
+verifyConnection()
+sendSMS(...)
+sendVoiceAlert(...)
+```
+
+Adapt to the actual AgentPhone API available in the project/environment.
+
+Do not invent undocumented API endpoints or request formats.
+
+If the existing AgentPhone integration/API documentation is unavailable, implement the service abstraction and clearly isolate the provider-specific request code so it can be configured without rewriting the application.
+
+---
+
+# AGENTPHONE HEALTH CHECK
+
+Create:
+
+`GET /api/agentphone/verify`
+
+The endpoint should:
+
+1. Check whether credentials are configured.
+2. Verify connectivity/authentication.
+3. Check provisioned phone numbers if supported.
+4. Return safe diagnostic information.
+
+Example:
+
+```json
+{
+  "connected": true,
+  "authenticated": true,
+  "phoneNumbers": [
+    {
+      "number": "+1..."
+    }
+  ]
+}
+```
+
+Never expose the API key.
+
+---
+
+# AGENTPHONE ALERT DISPATCH
+
+Create:
+
+`POST /api/agentphone/alert`
+
+Request:
+
+```json
+{
+  "phoneNumber": "+1234567890",
+  "message": "Thermal anomaly detected in the selected scene."
+}
+```
+
+Validate:
+
+- phone number
+- message
+- maximum message length
+- required fields
+
+Return a normalized result:
+
+```json
+{
+  "success": true,
+  "channel": "sms",
+  "messageId": "..."
+}
+```
+
+If voice is supported, allow:
+
+```json
+{
+  "phoneNumber": "+1234567890",
+  "message": "...",
+  "channel": "voice"
+}
+```
+
+Do not send real alerts automatically merely because the application detects an anomaly unless the existing application explicitly contains an enabled automatic-alert configuration.
+
+Provide a safe test path.
+
+---
+
+# AGENTPHONE FRONTEND
+
+Under **Detection Results**, add:
+
+## Alert Dispatch / Test AgentPhone
+
+Create a modal containing:
+
+- AgentPhone connection status
+- phone number input
+- message input
+- channel selector:
+  - SMS
+  - Voice, if supported
+- "Test Connection" button
+- "Send Test Alert" button
+- result/status area
+- error handling
+
+The modal should clearly distinguish:
+
+**Connectivity Test**
+
+from:
+
+**Actual Alert Dispatch**
+
+Prevent accidental dispatch where appropriate.
+
+Show:
+
+- sending
+- success
+- failure
+- provider response status
+- timestamp
+
+Never display API credentials.
+
+---
+
+# PHASE 6 — CONNECT AI DETECTION TO ALERTING
+
+Where the existing IrisMap detection pipeline produces a significant anomaly, prepare an alert object such as:
+
+```json
+{
+  "type": "thermal_anomaly",
+  "severity": "high",
+  "location": {
+    "lat": 0,
+    "lng": 0
+  },
+  "message": "..."
+}
+```
+
+Integrate this with the AgentPhone service **without automatically sending alerts unless explicitly enabled by the user/application configuration**.
+
+Provide an architecture that supports:
+
+```text
+Detection
+   ↓
+Anomaly Classification
+   ↓
+Alert Decision
+   ↓
+AgentPhone Dispatcher
+   ↓
+SMS / Voice
+```
+
+This keeps detection and communication decoupled.
+
+---
+
+# PHASE 7 — ENVIRONMENT VARIABLES & SECURITY
+
+All secrets must come exclusively from environment variables.
+
+Required:
+
+```text
+OPENAI_API_KEY=
+GOOGLE_MAPS_API_KEY=
+RAILWAY_API_TOKEN=
+CLOUDFLARE_API_TOKEN=
+CLOUDFLARE_ACCOUNT_ID=
+AGENTPHONE_API_KEY=
+```
+
+Optional configuration variables may be added where useful, for example:
+
+```text
+OPENAI_MODEL=
+AGENTPHONE_DEFAULT_CHANNEL=
+ENABLE_AUTOMATIC_ALERTS=
+```
+
+## NEVER:
+
+- hardcode secrets
+- commit secrets
+- place API keys in frontend source
+- expose server environment variables to the browser
+- print tokens in logs
+- return tokens through API endpoints
+- include secrets in error messages
+
+Use a centralized configuration layer if the project architecture supports it.
+
+Example concept:
+
+```ts
+const config = {
+  openaiApiKey: process.env.OPENAI_API_KEY,
+  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+  railwayToken: process.env.RAILWAY_API_TOKEN,
+  cloudflareToken: process.env.CLOUDFLARE_API_TOKEN,
+  cloudflareAccountId: process.env.CLOUDFLARE_ACCOUNT_ID,
+  agentPhoneApiKey: process.env.AGENTPHONE_API_KEY
+};
+```
+
+Do not expose this configuration object to the frontend.
+
+---
+
+# .GITIGNORE
+
+Ensure `.gitignore` contains at minimum:
+
+```text
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.DS_Store
+```
+
+Create/update:
+
+`.env.example`
+
+containing variable names only:
+
+```text
+OPENAI_API_KEY=
+GOOGLE_MAPS_API_KEY=
+RAILWAY_API_TOKEN=
+CLOUDFLARE_API_TOKEN=
+CLOUDFLARE_ACCOUNT_ID=
+AGENTPHONE_API_KEY=
+OPENAI_MODEL=gpt-4o
+```
+
+Never put real credentials into `.env.example`.
+
+---
+
+# PHASE 8 — ERROR HANDLING & GRACEFUL DEGRADATION
+
+The application must continue functioning if individual integrations are unavailable.
+
+Examples:
+
+### OpenAI unavailable
+
+Map remains usable.
+
+AI panel shows:
+
+> AI analysis unavailable. Check OpenAI configuration.
+
+### Google Maps unavailable
+
+Esri/OSM remain usable.
+
+### Railway unavailable
+
+MCP dashboard shows:
+
+> Railway — Disconnected
+
+without crashing the application.
+
+### Cloudflare unavailable
+
+Other diagnostics continue working.
+
+### AgentPhone unavailable
+
+Detection results remain available; only alert dispatch is disabled.
+
+The application should never fail completely because an optional external service is unavailable.
+
+---
+
+# PHASE 9 — UX REQUIREMENTS
+
+Maintain IrisMap's existing visual identity.
+
+Use consistent:
+
+- cards
+- badges
+- modals
+- loading states
+- error states
+- success states
+- tooltips
+- icons
+- spacing
+- typography
+
+Important states should be immediately understandable.
+
+Examples:
+
+🟢 Connected  
+🟡 Configured / Not Tested  
+🔴 Disconnected  
+⚪ Not Configured
+
+Avoid overwhelming the main map interface.
+
+---
+
+# PHASE 10 — API VALIDATION
+
+All new backend routes must validate inputs.
+
+Routes:
+
+```text
+POST /api/analyze-scene
+GET  /api/mcp/status
+GET  /api/agentphone/verify
+POST /api/agentphone/alert
+```
+
+For invalid requests return appropriate HTTP status codes and structured errors.
+
+Example:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "phoneNumber is required"
+  }
+}
+```
+
+Do not expose stack traces or secret values in production responses.
+
+---
+
+# PHASE 11 — LOGGING
+
+Implement useful server-side logging for:
+
+- AI analysis request start/end
+- MCP connectivity checks
+- AgentPhone request start/end
+- external service failures
+- deployment/runtime issues
+
+But NEVER log:
+
+- API keys
+- Authorization headers
+- complete sensitive request bodies
+- private credentials
+
+Use request IDs/correlation IDs where practical.
+
+---
+
+# PHASE 12 — TESTING
+
+After implementation, test every integration.
+
+## AI
+
+Test:
+
+- Analyze Scene button
+- viewport capture
+- base64 conversion
+- coordinates
+- zoom
+- band
+- composite
+- backend request
+- OpenAI response
+- JSON parsing
+- confidence display
+- error handling
+
+## Maps
+
+Test:
+
+- Esri
+- OSM
+- Google Roadmap
+- Google Satellite
+- Google Hybrid
+- switching providers
+- missing Google key
+
+## MCP
+
+Test:
+
+- Railway connected
+- Railway disconnected
+- Cloudflare connected
+- Cloudflare disconnected
+- `/api/mcp/status`
+- frontend status badges
+
+## AgentPhone
+
+Test:
+
+- credentials missing
+- connectivity verification
+- phone-number validation
+- SMS test
+- voice test if supported
+- provider failure
+- successful dispatch
+
+## Security
+
+Search the repository for:
+
+```text
+OPENAI_API_KEY
+GOOGLE_MAPS_API_KEY
+RAILWAY_API_TOKEN
+CLOUDFLARE_API_TOKEN
+AGENTPHONE_API_KEY
+```
+
+Confirm there are no hardcoded credentials.
+
+Also search for:
+
+```text
+sk-
+Bearer
+api_key=
+token=
+password=
+secret=
+```
+
+and inspect suspicious matches.
+
+---
+
+# PHASE 13 — BUILD & DEPLOYMENT READINESS
+
+Run the project's existing:
+
+- type checking
+- linting
+- tests
+- production build
+
+Fix:
+
+- TypeScript errors
+- missing imports
+- unused broken imports
+- API route failures
+- frontend runtime errors
+- invalid environment-variable references
+- dependency issues
+
+Do not merely suppress errors.
+
+If new dependencies are required, add them properly to `package.json`.
+
+Verify:
+
+```text
+npm install
+npm run build
+```
+
+or the equivalent commands used by the existing project.
+
+---
+
+# PHASE 14 — REPLIT DEPLOYMENT READINESS
+
+Ensure the application can run in Replit using environment variables configured through Replit Secrets.
+
+The application must not depend on a developer's local `.env` file being committed.
+
+Verify:
+
+- frontend starts
+- backend starts
+- production build works
+- API routes are reachable
+- environment variables are read server-side
+- optional integrations degrade gracefully
+- no secrets appear in browser bundles
+- no secrets appear in logs
+
+---
+
+# FINAL ACCEPTANCE CRITERIA
+
+Do not consider the task complete until all of the following are true:
+
+### AI Scene Analysis
+
+- [ ] Analyze Scene captures the active viewport
+- [ ] Coordinates are captured
+- [ ] Zoom is captured
+- [ ] Band/composite are captured
+- [ ] Backend OpenAI route works
+- [ ] Structured JSON is returned
+- [ ] Confidence scores are displayed
+- [ ] Detection tags are displayed
+- [ ] Loading/error states work
+
+### Mapping
+
+- [ ] Esri continues working
+- [ ] OpenStreetMap continues working
+- [ ] Google Roadmap works
+- [ ] Google Satellite works
+- [ ] Google Hybrid works
+- [ ] Provider switching works
+- [ ] Missing Google key does not break the application
+
+### MCP
+
+- [ ] MCP module exists under `server/mcp/`
+- [ ] Railway integration is isolated
+- [ ] Cloudflare integration is isolated
+- [ ] `/api/mcp/status` works
+- [ ] UI status badges work
+- [ ] Credentials are never exposed
+
+### AgentPhone
+
+- [ ] `server/services/agentPhone.ts` exists
+- [ ] `/api/agentphone/verify` works
+- [ ] `/api/agentphone/alert` works
+- [ ] phone validation works
+- [ ] test alert UI works
+- [ ] failure states work
+- [ ] credentials remain server-side
+
+### Security
+
+- [ ] No hardcoded secrets
+- [ ] `.env` ignored
+- [ ] `.env.example` exists
+- [ ] Secrets are server-side only
+- [ ] Logs do not contain credentials
+- [ ] API responses do not expose credentials
+
+### Deployment
+
+- [ ] Production build succeeds
+- [ ] Type checking succeeds
+- [ ] Existing functionality remains intact
+- [ ] Optional integrations fail gracefully
+- [ ] Replit Secrets can provide all required credentials
+- [ ] GitHub export is safe
+
+---
+
+# IMPORTANT IMPLEMENTATION BEHAVIOR
+
+If an external API, MCP server, or AgentPhone API is unavailable or its exact interface differs from the assumptions above:
+
+**Do not fabricate an API.**
+
+Instead:
+
+1. Inspect existing project dependencies and documentation.
+2. Use the official SDK/API where available.
+3. Isolate provider-specific code.
+4. Implement a clean adapter/interface.
+5. Make unavailable functionality report `Disconnected` or `Not Configured`.
+6. Keep the rest of IrisMap functional.
+7. Clearly document anything that requires a real credential or provider endpoint.
+
+At the end, provide a concise implementation report containing:
+
+1. Files created
+2. Files modified
+3. Dependencies added
+4. Environment variables required
+5. API endpoints added
+6. Features successfully integrated
+7. Tests/build checks performed
+8. Any remaining provider-specific configuration required
+9. Any known limitations
+
+**Most important requirement: this is an upgrade to an existing BAH 2026 project, not a request to rebuild IrisMap from scratch. Preserve working functionality and integrate each capability cleanly into what already exists.**

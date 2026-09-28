@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "YnTlDdJZqyxAyZquJ9t-B"
+uri = "file://.local/outputs/Infrared-Vision.pptx"
+type = "slides"
+title = "Infrared Vision.pptx"

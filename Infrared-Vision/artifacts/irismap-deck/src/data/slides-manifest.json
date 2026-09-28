@@ -1,0 +1,74 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567801",
+    "position": 1,
+    "filepath": "src/pages/slides/Slide01Title.tsx",
+    "title": "IrisMap",
+    "description": "Title slide — IrisMap infrared satellite colorization prototype",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567802",
+    "position": 2,
+    "filepath": "src/pages/slides/Slide02Problem.tsx",
+    "title": "The Problem",
+    "description": "IR sensor limitations — monochrome imagery, low contrast, CV model failures",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567803",
+    "position": 3,
+    "filepath": "src/pages/slides/Slide03Pipeline.tsx",
+    "title": "Signal Pipeline",
+    "description": "End-to-end data flow architecture from IR sensor to enhanced RGB output",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567804",
+    "position": 4,
+    "filepath": "src/pages/slides/Slide04BandModes.tsx",
+    "title": "Band Composite Modes",
+    "description": "Six spectral modes derived from a single sensor source",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567805",
+    "position": 5,
+    "filepath": "src/pages/slides/Slide05Method.tsx",
+    "title": "Colorization Method",
+    "description": "Image-to-image translation — input/output specification and enhancement pipeline",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567806",
+    "position": 6,
+    "filepath": "src/pages/slides/Slide06Detection.tsx",
+    "title": "Object Detection Results",
+    "description": "Simulated detection results for Hyderabad AOI — vehicles, buildings, roads, vegetation",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567807",
+    "position": 7,
+    "filepath": "src/pages/slides/Slide07Prototype.tsx",
+    "title": "Prototype: IrisMap",
+    "description": "Interactive web demo features — map engine, band switching, enhancement controls",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567808",
+    "position": 8,
+    "filepath": "src/pages/slides/Slide08Applications.tsx",
+    "title": "Applications",
+    "description": "Five operational domains: disaster response, defense, agriculture, urban planning, humanitarian aid",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567809",
+    "position": 9,
+    "filepath": "src/pages/slides/Slide09NextSteps.tsx",
+    "title": "Next Steps",
+    "description": "Phase 2 objectives — dataset training, ONNX inference, segmentation, API integration",
+    "speakerNotes": ""
+  }
+]

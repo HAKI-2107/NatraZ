@@ -1,0 +1,1 @@
+- [Integration status semantics](integration-status.md) — configured credentials do not imply a live provider connection; keep optional transports isolated and failures generic.
